@@ -4,6 +4,11 @@ All notable changes to QR Code Generator Telegram Bot are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Smoke tests no longer use the unsupported Docker Compose `run --no-build`
+  flag, improving compatibility with older Compose v2 installations.
+
 ### Added
 
 - Russian and English user interface selected from Telegram language.

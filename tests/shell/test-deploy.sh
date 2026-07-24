@@ -274,6 +274,9 @@ prepare_case "$success"
 run_deploy "$success"
 [[ "$(<"$success/head")" == "new-commit" ]] || fail "successful deploy did not advance Git"
 grep -q 'Deployment successful commit=new-commit' "$success/logs/"*-deploy-*.log
+if grep -q -- '--no-build' "$success/commands.log"; then
+  fail "smoke test uses unsupported compose run --no-build flag"
+fi
 
 noop="$TEST_ROOT/noop"
 prepare_case "$noop"
