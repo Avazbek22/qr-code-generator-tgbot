@@ -50,7 +50,8 @@ quiet zone.
 ### A friendly Telegram experience
 
 - Send any text or link for instant generation.
-- Use inline buttons for structured formats.
+- Use a persistent Telegram reply keyboard for structured formats without
+  adding inline controls to the conversation.
 - Share a Telegram location instead of copying coordinates.
 - Get automatic Russian or English UI from the Telegram language.
 - Use `/cancel` at any point and `/start` to return to the menu.

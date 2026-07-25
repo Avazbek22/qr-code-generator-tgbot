@@ -87,7 +87,7 @@ class Application:
         self.bot.infinity_polling(
             timeout=self.settings.polling_timeout_seconds,
             long_polling_timeout=self.settings.long_polling_timeout_seconds,
-            allowed_updates=["message", "callback_query"],
+            allowed_updates=["message"],
         )
         if not self.stop_event.is_set():
             self.polling_finished_unexpectedly = True

@@ -13,6 +13,8 @@ All notable changes to QR Code Generator Telegram Bot are documented here.
 
 - QR codes are rendered at a larger resolution and sent as inline Telegram
   photos that reply directly to the source message.
+- Format selection now uses a persistent reply keyboard; generated photos have
+  no redundant caption or follow-up button.
 
 ### Added
 

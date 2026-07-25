@@ -33,21 +33,10 @@ class FakeBot:
 
         return decorator
 
-    def callback_query_handler(self, **kwargs: Any) -> Any:
-        self.handlers.append(kwargs)
-
-        def decorator(function: Any) -> Any:
-            return function
-
-        return decorator
-
     def send_message(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
 
     def send_photo(self, *args: Any, **kwargs: Any) -> None:
-        del args, kwargs
-
-    def answer_callback_query(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
 
     def set_my_commands(self, *args: Any, **kwargs: Any) -> None:
@@ -98,7 +87,7 @@ def test_handlers_register_only_during_successful_startup(tmp_path: Path) -> Non
     application.startup()
     try:
         assert bot.get_me_calls == 1
-        assert len(bot.handlers) == 6
+        assert len(bot.handlers) == 5
         assert bot.command_calls == 2
     finally:
         application.stop()

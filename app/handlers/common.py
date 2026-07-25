@@ -28,7 +28,7 @@ from app.qr import (
 
 if TYPE_CHECKING:
     from telebot import TeleBot
-    from telebot.types import CallbackQuery, Message
+    from telebot.types import Message
 
 LOGGER = logging.getLogger("telegram_bot.handlers")
 MODES = (
@@ -41,7 +41,11 @@ MODES = (
     "geo",
     "telegram",
 )
-MODE_SET = frozenset(MODES)
+BUTTON_TO_MODE = {
+    text(language, f"button_{mode}"): mode
+    for language in ("ru", "en")
+    for mode in MODES
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,28 +98,15 @@ class ConversationStore:
     def clear(self, message: Message) -> bool:
         return self.pop(message) is not None
 
-    def clear_for(self, chat_id: int, user_id: int) -> bool:
-        return self.pop_for(chat_id, user_id) is not None
 
-
-def _menu(language: str) -> types.InlineKeyboardMarkup:
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(
-        *[
-            types.InlineKeyboardButton(
-                text(language, f"button_{mode}"),
-                callback_data=f"qr:{mode}",
-            )
-            for mode in MODES
-        ]
+def _menu(language: str) -> types.ReplyKeyboardMarkup:
+    keyboard = types.ReplyKeyboardMarkup(
+        row_width=2,
+        resize_keyboard=True,
+        is_persistent=True,
     )
-    return keyboard
-
-
-def _again(language: str) -> types.InlineKeyboardMarkup:
-    keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
-        types.InlineKeyboardButton(text(language, "again"), callback_data="qr:menu")
+        *[types.KeyboardButton(text(language, f"button_{mode}")) for mode in MODES]
     )
     return keyboard
 
@@ -173,8 +164,6 @@ def register_handlers(bot: TeleBot) -> None:
             bot.send_photo(
                 message.chat.id,
                 image,
-                caption=text(language, "ready"),
-                reply_markup=_again(language),
                 reply_parameters=types.ReplyParameters(
                     message_id=message.message_id,
                     allow_sending_without_reply=True,
@@ -212,31 +201,6 @@ def register_handlers(bot: TeleBot) -> None:
             reply_markup=_menu(language),
         )
 
-    @bot.callback_query_handler(func=lambda call: bool(call.data))
-    def handle_callback(call: CallbackQuery) -> None:
-        language = language_of(call)
-        data = call.data or ""
-        bot.answer_callback_query(call.id)
-        if call.message is None:
-            return
-        if data == "qr:menu":
-            conversations.clear_for(call.message.chat.id, call.from_user.id)
-            show_menu(call.message, language)
-            return
-        mode = data.removeprefix("qr:")
-        if mode not in MODE_SET:
-            return
-        conversations.set_for(
-            call.message.chat.id,
-            call.from_user.id,
-            Conversation(mode, language),
-        )
-        bot.send_message(
-            call.message.chat.id,
-            text(language, mode),
-            parse_mode="HTML",
-        )
-
     @bot.message_handler(content_types=["location"])
     def handle_location(message: Message) -> None:
         conversation = conversations.pop(message)
@@ -265,6 +229,16 @@ def register_handlers(bot: TeleBot) -> None:
     )
     def handle_text(message: Message) -> None:
         if not message.text:
+            return
+        selected_mode = BUTTON_TO_MODE.get(message.text.strip())
+        if selected_mode is not None:
+            language = language_of(message)
+            conversations.set(message, Conversation(selected_mode, language))
+            bot.send_message(
+                message.chat.id,
+                text(language, selected_mode),
+                parse_mode="HTML",
+            )
             return
         conversation = conversations.pop(message)
         language = conversation.language if conversation else language_of(message)
