@@ -15,6 +15,10 @@ All notable changes to QR Code Generator Telegram Bot are documented here.
   photos that reply directly to the source message.
 - Format selection now uses a persistent reply keyboard; generated photos have
   no redundant caption or follow-up button.
+- International phone numbers accept country-specific punctuation and `00`
+  prefixes, then normalize to E.164 using lightweight libphonenumber metadata.
+- The generated image uses a compact 8 px white edge instead of a wide
+  four-module border.
 
 ### Added
 

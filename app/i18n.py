@@ -31,10 +31,13 @@ TEXTS: dict[str, dict[str, str]] = {
             "<code>Имя\nТелефон\nEmail\nКомпания\nДолжность\nСайт\nАдрес</code>\n\n"
             "Только имя обязательно. Пустые необязательные строки можно оставить."
         ),
-        "phone": "Отправьте номер телефона, например <code>+79991234567</code>.",
+        "phone": (
+            "Отправьте номер с кодом страны в любом привычном формате, например "
+            "<code>+7 (999) 123-45-67</code>."
+        ),
         "sms": (
             "Первая строка — номер, вторая — текст SMS:\n"
-            "<code>+79991234567\nБуду через 10 минут</code>"
+            "<code>+7 (999) 123-45-67\nБуду через 10 минут</code>"
         ),
         "email": (
             "Отправьте email, тему и текст — каждый с новой строки:\n"
@@ -91,10 +94,13 @@ TEXTS: dict[str, dict[str, str]] = {
             "<code>Name\nPhone\nEmail\nCompany\nJob title\nWebsite\nAddress</code>\n\n"
             "Only the name is required. Optional lines may be empty."
         ),
-        "phone": "Send a phone number, for example <code>+12025550123</code>.",
+        "phone": (
+            "Send a number with its country code in any familiar format, for "
+            "example <code>+1 (202) 555-0123</code>."
+        ),
         "sms": (
             "Put the number on the first line and SMS text on the second:\n"
-            "<code>+12025550123\nSee you in 10 minutes</code>"
+            "<code>+1 (202) 555-0123\nSee you in 10 minutes</code>"
         ),
         "email": (
             "Send the email address, subject, and body on separate lines:\n"

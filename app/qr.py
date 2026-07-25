@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from io import BytesIO
 from urllib.parse import urlencode
 
+import phonenumbers
 import qrcode
+from phonenumbers import NumberParseException, PhoneNumberFormat
+from PIL import ImageOps
 from qrcode.constants import ERROR_CORRECT_M
 
 
@@ -98,10 +102,22 @@ def vcard_payload(card: VCard) -> str:
 
 
 def normalize_phone(value: str) -> str:
-    phone = re.sub(r"[\s().-]", "", value.strip())
-    if not re.fullmatch(r"\+?[0-9*#]{3,32}", phone):
+    phone = unicodedata.normalize("NFKC", value).strip()
+    service_code = re.sub(r"[\s().-]", "", phone)
+    if re.fullmatch(r"[*#][0-9*#]{1,31}", service_code):
+        return service_code
+    if phone.startswith("00"):
+        phone = f"+{phone[2:]}"
+    try:
+        parsed = phonenumbers.parse(phone, None)
+    except NumberParseException as exc:
+        raise PayloadError("phone") from exc
+    if not phonenumbers.is_possible_number(parsed):
         raise PayloadError("phone")
-    return phone
+    normalized = phonenumbers.format_number(parsed, PhoneNumberFormat.E164)
+    if parsed.extension:
+        normalized = f"{normalized};ext={parsed.extension}"
+    return normalized
 
 
 def phone_payload(value: str) -> str:
@@ -148,11 +164,12 @@ def make_png(payload: str) -> BytesIO:
         version=None,
         error_correction=ERROR_CORRECT_M,
         box_size=24,
-        border=4,
+        border=0,
     )
     qr.add_data(payload)
     qr.make(fit=True)
     image = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+    image = ImageOps.expand(image, border=8, fill="white")
 
     output = BytesIO()
     output.name = "qr-code.png"

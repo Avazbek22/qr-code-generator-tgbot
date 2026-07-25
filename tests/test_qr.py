@@ -48,6 +48,22 @@ def test_vcard_contains_only_provided_fields() -> None:
 
 
 @pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("+7 (999) 123-45-67", "tel:+79991234567"),
+        ("0044 20 7946 0958", "tel:+442079460958"),
+        ("＋８１ ３－１２３４－５６７８", "tel:+81312345678"),  # noqa: RUF001
+        ("+49 (30) 901820 ext. 42", "tel:+4930901820;ext=42"),
+        ("*123#", "tel:*123#"),
+    ],
+)
+def test_phone_formats_are_normalized_internationally(
+    value: str, expected: str
+) -> None:
+    assert phone_payload(value) == expected
+
+
+@pytest.mark.parametrize(
     ("function", "expected"),
     [
         (lambda: phone_payload("+1 (202) 555-0123"), "tel:+12025550123"),
@@ -75,6 +91,8 @@ def test_typed_payloads(function: object, expected: str) -> None:
     [
         lambda: wifi_payload("", "password"),
         lambda: phone_payload("call-me"),
+        lambda: phone_payload("202-555-0123"),
+        lambda: phone_payload("+999 123 456"),
         lambda: email_payload("not-an-email"),
         lambda: geo_payload(91, 0),
         lambda: telegram_payload("@bad"),
@@ -86,7 +104,7 @@ def test_invalid_payloads_are_rejected(function: object) -> None:
 
 
 def test_png_is_generated_in_memory() -> None:
-    image = make_png("https://example.com")
+    image = make_png("hello")
     assert isinstance(image, BytesIO)
     assert image.name == "qr-code.png"
     assert image.tell() == 0
@@ -94,5 +112,6 @@ def test_png_is_generated_in_memory() -> None:
     image.seek(0)
     with Image.open(image) as qr_image:
         assert qr_image.mode == "RGB"
-        assert qr_image.width >= 696
-        assert qr_image.height >= 696
+        assert qr_image.size == (520, 520)
+        assert qr_image.getpixel((7, 7)) == (255, 255, 255)
+        assert qr_image.getpixel((8, 8)) == (0, 0, 0)

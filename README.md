@@ -37,15 +37,14 @@ token, and keep it on your own VPS.
 | 📝 Text & links | Any text, URL, invite, code, or note |
 | 📶 Wi-Fi | Network name, password, and WPA/WEP/open security |
 | 👤 Contact | A portable vCard with phone, email, company, website, and address |
-| 📞 Phone | A ready-to-dial telephone number |
+| 📞 Phone | International formats normalized to a ready-to-dial number |
 | 💬 SMS | A number and pre-filled message |
 | ✉️ Email | Recipient, subject, and body |
 | 📍 Location | Shared Telegram location or latitude/longitude |
 | ✈️ Telegram | A profile, bot, group, or public channel link |
 
 There are no design controls to get in the way. Every result is a standard
-black-on-white PNG with sensible QR error correction and a scanner-friendly
-quiet zone.
+black-on-white PNG with sensible QR error correction and a compact 8 px edge.
 
 ### A friendly Telegram experience
 
