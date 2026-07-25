@@ -147,12 +147,12 @@ def make_png(payload: str) -> BytesIO:
     qr = qrcode.QRCode(
         version=None,
         error_correction=ERROR_CORRECT_M,
-        box_size=10,
+        box_size=24,
         border=4,
     )
     qr.add_data(payload)
     qr.make(fit=True)
-    image = qr.make_image(fill_color="black", back_color="white")
+    image = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
     output = BytesIO()
     output.name = "qr-code.png"

@@ -3,6 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 
 import pytest
+from PIL import Image
 
 from app.qr import (
     PayloadError,
@@ -90,3 +91,8 @@ def test_png_is_generated_in_memory() -> None:
     assert image.name == "qr-code.png"
     assert image.tell() == 0
     assert image.read(8) == b"\x89PNG\r\n\x1a\n"
+    image.seek(0)
+    with Image.open(image) as qr_image:
+        assert qr_image.mode == "RGB"
+        assert qr_image.width >= 696
+        assert qr_image.height >= 696

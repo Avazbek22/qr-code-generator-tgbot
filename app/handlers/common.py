@@ -170,11 +170,15 @@ def register_handlers(bot: TeleBot) -> None:
     def send_qr(message: Message, payload: str, language: str) -> None:
         try:
             image = make_png(payload)
-            bot.send_document(
+            bot.send_photo(
                 message.chat.id,
                 image,
                 caption=text(language, "ready"),
                 reply_markup=_again(language),
+                reply_parameters=types.ReplyParameters(
+                    message_id=message.message_id,
+                    allow_sending_without_reply=True,
+                ),
             )
         except DataOverflowError:
             bot.send_message(message.chat.id, text(language, "too_large"))

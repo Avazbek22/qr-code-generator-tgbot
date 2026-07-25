@@ -54,8 +54,8 @@ quiet zone.
 - Share a Telegram location instead of copying coordinates.
 - Get automatic Russian or English UI from the Telegram language.
 - Use `/cancel` at any point and `/start` to return to the menu.
-- Receive the image as a document, preserving the original PNG without photo
-  compression.
+- Receive a large inline image as a direct reply to the source message, keeping
+  the QR code and its context together.
 
 ## Privacy by design
 

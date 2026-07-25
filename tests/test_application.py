@@ -44,7 +44,7 @@ class FakeBot:
     def send_message(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
 
-    def send_document(self, *args: Any, **kwargs: Any) -> None:
+    def send_photo(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
 
     def answer_callback_query(self, *args: Any, **kwargs: Any) -> None:

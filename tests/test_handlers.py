@@ -11,7 +11,7 @@ class FakeBot:
         self.message_handlers: list[tuple[dict[str, Any], Any]] = []
         self.callback_handlers: list[Any] = []
         self.messages: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
-        self.documents: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+        self.photos: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
         self.answered_callbacks: list[str] = []
 
     def message_handler(self, **filters: Any) -> Any:
@@ -33,8 +33,8 @@ class FakeBot:
     def send_message(self, *args: Any, **kwargs: Any) -> None:
         self.messages.append((args, kwargs))
 
-    def send_document(self, *args: Any, **kwargs: Any) -> None:
-        self.documents.append((args, kwargs))
+    def send_photo(self, *args: Any, **kwargs: Any) -> None:
+        self.photos.append((args, kwargs))
 
     def answer_callback_query(self, callback_id: str) -> None:
         self.answered_callbacks.append(callback_id)
@@ -52,6 +52,7 @@ def user_message(
         from_user=SimpleNamespace(id=user_id, language_code=language),
         text=text,
         location=location,
+        message_id=123,
     )
 
 
@@ -80,10 +81,13 @@ def test_callback_selection_is_applied_to_the_clicking_user() -> None:
     text_handler(user_message("+1 (202) 555-0123"))
 
     assert bot.answered_callbacks == ["callback-1"]
-    assert len(bot.documents) == 1
-    document = bot.documents[0][0][1]
-    assert document.name == "qr-code.png"
-    assert document.read(8) == b"\x89PNG\r\n\x1a\n"
+    assert len(bot.photos) == 1
+    photo = bot.photos[0][0][1]
+    assert photo.name == "qr-code.png"
+    assert photo.read(8) == b"\x89PNG\r\n\x1a\n"
+    reply = bot.photos[0][1]["reply_parameters"]
+    assert reply.message_id == 123
+    assert reply.allow_sending_without_reply
 
 
 def test_invalid_structured_input_can_be_retried() -> None:
@@ -100,9 +104,9 @@ def test_invalid_structured_input_can_be_retried() -> None:
 
     callback(call)
     text_handler(user_message("not-an-email"))
-    assert bot.documents == []
+    assert bot.photos == []
     text_handler(user_message("hello@example.com\nHello\nBody"))
-    assert len(bot.documents) == 1
+    assert len(bot.photos) == 1
 
 
 def test_shared_location_generates_qr() -> None:
@@ -124,8 +128,8 @@ def test_shared_location_generates_qr() -> None:
             location=SimpleNamespace(latitude=55.7558, longitude=37.6176),
         )
     )
-    assert len(bot.documents) == 1
-    assert bot.documents[0][1]["caption"] == "Готово ✨"
+    assert len(bot.photos) == 1
+    assert bot.photos[0][1]["caption"] == "Готово ✨"
 
 
 def test_conversation_state_expires_without_background_work() -> None:
