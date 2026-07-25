@@ -112,6 +112,6 @@ def test_png_is_generated_in_memory() -> None:
     image.seek(0)
     with Image.open(image) as qr_image:
         assert qr_image.mode == "RGB"
-        assert qr_image.size == (520, 520)
-        assert qr_image.getpixel((7, 7)) == (255, 255, 255)
-        assert qr_image.getpixel((8, 8)) == (0, 0, 0)
+        assert qr_image.size == (552, 552)
+        assert qr_image.getpixel((23, 23)) == (255, 255, 255)
+        assert qr_image.getpixel((24, 24)) == (0, 0, 0)

@@ -44,7 +44,7 @@ token, and keep it on your own VPS.
 | ✈️ Telegram | A profile, bot, group, or public channel link |
 
 There are no design controls to get in the way. Every result is a standard
-black-on-white PNG with sensible QR error correction and a compact 8 px edge.
+black-on-white PNG with sensible QR error correction and a balanced 24 px edge.
 
 ### A friendly Telegram experience
 
