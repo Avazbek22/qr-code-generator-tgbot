@@ -4,6 +4,21 @@ All notable changes to QR Code Generator Telegram Bot are documented here.
 
 ## [Unreleased]
 
+### Deployment
+
+- The VPS deploys a commit only after its GitHub checks pass, or after 30
+  minutes if CI never starts. No deploy branch is needed.
+- The bot counts as healthy only while Telegram answers its `getUpdates`
+  requests; `HEALTH_HEARTBEAT_SECONDS` is no longer used.
+- Releases are recorded as commit plus exact image. A fresh release that turns
+  unhealthy within ten minutes is rolled back automatically, and a manual
+  rollback can be undone.
+- Commits that do not change the image are deployed without a restart.
+- Weekly scheduled rebuild picks up base-image security fixes.
+- Git runs as the owner of the checkout, so any user can clone and install.
+- New `deploy.conf`, `scripts/status.sh`, real-Git shell tests, and a
+  real-Docker end-to-end test in CI.
+
 ### Fixed
 
 - Smoke tests no longer use the unsupported Docker Compose `run --no-build`

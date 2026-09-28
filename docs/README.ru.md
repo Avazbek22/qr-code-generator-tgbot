@@ -99,17 +99,18 @@ docker compose ps
 
 ### Установка на VPS с автодеплоем
 
-Для Ubuntu 22.04 или 24.04 в проекте есть готовый installer:
+Для Ubuntu 22.04 или 24.04 в проекте есть готовый installer. Клонировать можно
+от любого пользователя и в любой каталог:
 
 ```bash
 git clone https://github.com/Avazbek22/qr-code-generator-tgbot.git
 cd qr-code-generator-tgbot
-bash install.sh
+sudo bash install.sh
 ```
 
 Если токен не заполнен, скрипт безопасно запросит его скрытым вводом. Затем он
 соберёт image, проверит токен через Telegram, запустит контейнер и включит
-systemd timer.
+таймер деплоя и еженедельной пересборки.
 
 После этого для обновления достаточно:
 
@@ -117,9 +118,11 @@ systemd timer.
 git push origin main
 ```
 
-VPS примерно раз в две минуты проверяет fast-forward обновления. Неудачная
-сборка или нездоровый контейнер автоматически откатываются. Изменения только в
-документации не перезапускают бота.
+VPS раз в две минуты проверяет `origin/main` и выкатывает новый коммит, как
+только прошли его проверки в GitHub. Упавший CI, неудачная сборка, падение бота
+или бот, переставший получать сообщения, автоматически возвращают прошлый релиз,
+в том числе в первые десять минут после выкатки. Коммиты, которые не меняют
+образ (например, документация), выкатываются без перезапуска бота.
 
 ### Локальная разработка
 
@@ -144,7 +147,8 @@ python main.py
 - процесс работает без root и без Linux capabilities;
 - Docker-логи ротируются;
 - QR создаётся через Pillow непосредственно в оперативной памяти;
-- heartbeat healthcheck позволяет безопасно откатывать плохие обновления.
+- healthcheck считает бота здоровым, только пока Telegram отвечает на его
+  `getUpdates`, поэтому плохие обновления безопасно откатываются.
 
 ## Настройка
 
@@ -157,28 +161,24 @@ python main.py
 | `LOG_LEVEL` | `INFO` | Уровень операционных логов |
 | `POLLING_TIMEOUT_SECONDS` | `20` | Таймаут запроса к Telegram |
 | `LONG_POLLING_TIMEOUT_SECONDS` | `30` | Таймаут long polling |
-| `HEALTH_HEARTBEAT_SECONDS` | `25` | Интервал heartbeat |
-| `HEALTH_MAX_AGE_SECONDS` | `120` | Максимальный возраст health marker |
+| `HEALTH_MAX_AGE_SECONDS` | `120` | Unhealthy, если `getUpdates` не удавался дольше |
+| `TELEGRAM_API_URL` | пусто | Необязательный собственный Bot API сервер |
 
 Файл `.env` исключён из Git и Docker build context. Никогда не коммитьте
-настоящий токен.
+настоящий токен. Installer закрепляет в `.env` значение `APP_SLUG`, поэтому
+обычные команды `docker compose` находят нужный проект.
+
+Настройки деплоя — ожидание CI, расписание пересборки, окно наблюдения и
+количество хранимых релизов — лежат в [`deploy.conf`](../deploy.conf).
 
 ## Полезные команды
 
 ```bash
-docker compose ps
-docker compose logs -f --tail=100 bot
-docker compose restart bot
-
-sudo bash scripts/deploy.sh
-sudo bash scripts/rollback.sh
-```
-
-Если меняли `APP_NAME`, передайте slug, который напечатал installer:
-
-```bash
-APP_SLUG=my-qr-bot docker compose ps
-sudo systemctl status my-qr-bot-deploy.timer
+sudo bash scripts/status.sh             # что запущено, куда можно откатиться, чего ждёт деплой
+docker compose logs -f --tail=100 bot   # логи
+sudo bash scripts/deploy.sh             # выкатить сейчас, не дожидаясь таймера
+sudo bash scripts/deploy.sh --retry     # повторить упавший коммит
+sudo bash scripts/rollback.sh           # вернуть прошлый релиз (повтор — вернуть обратно)
 ```
 
 Полная production-проверка находится в
@@ -201,14 +201,16 @@ sudo systemctl status my-qr-bot-deploy.timer
 python -m ruff check .
 python -m ruff format --check .
 python -m pytest
-shellcheck install.sh scripts/*.sh tests/shell/*.sh
+shellcheck install.sh scripts/*.sh tests/shell/*.sh tests/e2e/*.sh
 bash tests/shell/test-deploy.sh
 ENV_FILE=.env-example APP_SLUG=qr-code-generator-tgbot \
   docker compose config --quiet
+bash tests/e2e/in-docker.sh   # около 10 минут, нужен Docker
 ```
 
-CI тестирует Python 3.11–3.13, deployment и rollback, собирает production image
-и проверяет non-root/read-only конфигурацию.
+CI тестирует Python 3.11–3.13, deployment и rollback, собирает production image,
+проверяет non-root/read-only конфигурацию и прогоняет настоящие installer и
+скрипты деплоя на настоящем Docker с поддельным Telegram API.
 
 ## Участие в проекте
 

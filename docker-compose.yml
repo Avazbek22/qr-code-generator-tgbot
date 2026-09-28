@@ -2,7 +2,8 @@ name: ${APP_SLUG:-qr-code-generator-tgbot}
 
 services:
   bot:
-    image: ${APP_SLUG:-qr-code-generator-tgbot}:local
+    # Deployment builds candidates as :candidate; :local is the running release.
+    image: ${APP_SLUG:-qr-code-generator-tgbot}:${APP_IMAGE_TAG:-local}
     build:
       context: .
     restart: unless-stopped
@@ -23,7 +24,8 @@ services:
     cpus: 0.50
     mem_limit: 192m
     pids_limit: 64
-    stop_grace_period: 30s
+    # Longer than one long-polling cycle, so shutdown never needs SIGKILL.
+    stop_grace_period: 45s
     healthcheck:
       test: ["CMD", "python", "-m", "app.healthcheck"]
       interval: 30s
