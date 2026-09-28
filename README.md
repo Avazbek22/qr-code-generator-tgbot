@@ -106,18 +106,19 @@ Open the bot in Telegram and send `/start`.
 
 ### One-time VPS installer with autodeploy
 
-On Ubuntu 22.04 or 24.04, the included installer configures Docker Compose,
-starts the bot, and enables safe updates from `origin/main`:
+On Ubuntu 22.04 or 24.04, clone the repository as any user and into any
+directory, then run the installer. It configures Docker Compose, starts the
+bot, and enables safe updates from `origin/main`:
 
 ```bash
 git clone https://github.com/Avazbek22/qr-code-generator-tgbot.git
 cd qr-code-generator-tgbot
-bash install.sh
+sudo bash install.sh
 ```
 
 If `.env` has no token, the installer asks for it through a hidden prompt. It
 then builds a candidate image, verifies the Telegram token, starts a healthy
-container, and enables a systemd timer.
+container, and enables the deployment timer and a weekly rebuild timer.
 
 From then on, a normal update is simply:
 
@@ -125,9 +126,11 @@ From then on, a normal update is simply:
 git push origin main
 ```
 
-The VPS checks for fast-forward updates roughly every two minutes. A broken
-build or unhealthy container is rolled back automatically. Documentation-only
-commits update the checkout without rebuilding the bot.
+The VPS checks `origin/main` every two minutes and deploys a new commit once its
+GitHub checks pass. A failed check, broken build, crash, or a bot that stops
+receiving updates restores the previous release automatically, including during
+the first ten minutes after a release. Commits that do not change the image,
+such as documentation, are deployed without restarting the bot.
 
 ### Local Python development
 
@@ -153,7 +156,7 @@ The production container:
 - writes only operational, token-redacted logs and deployment state;
 - uses Docker log rotation and a tiny `/tmp` filesystem;
 - exposes no port because Telegram long polling needs no reverse proxy;
-- includes a heartbeat healthcheck for Docker and automatic rollback.
+- reports healthy only while Telegram answers its `getUpdates` requests.
 
 The image contains Python, the Telegram client, Pillow, and the QR generator.
 There is no browser, database server, Redis, web framework, FFmpeg, or native
@@ -170,34 +173,33 @@ Most installations only need `BOT_TOKEN`.
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` |
 | `POLLING_TIMEOUT_SECONDS` | `20` | Telegram request timeout |
 | `LONG_POLLING_TIMEOUT_SECONDS` | `30` | Telegram long-poll timeout |
-| `HEALTH_HEARTBEAT_SECONDS` | `25` | Health marker refresh interval |
-| `HEALTH_MAX_AGE_SECONDS` | `120` | Maximum accepted health marker age |
+| `HEALTH_MAX_AGE_SECONDS` | `120` | Unhealthy when `getUpdates` has not succeeded for this long |
+| `TELEGRAM_API_URL` | empty | Optional self-hosted Bot API server |
 
 The same `.env` is used locally and in Docker. It is excluded from Git and the
-Docker build context. Never commit a real bot token.
+Docker build context. Never commit a real bot token. The installer also pins
+`APP_SLUG` in `.env`, so plain `docker compose` commands find the right project.
+
+Deployment settings — CI gate, rebuild schedule, watch window, and how many
+releases to keep — live in [`deploy.conf`](deploy.conf).
 
 ## Operations
 
 ```bash
-# Status and logs
-docker compose ps
+# What runs now, what it can roll back to, what deployment is waiting for
+sudo bash scripts/status.sh
+
+# Logs
 docker compose logs -f --tail=100 bot
 
-# Restart
-docker compose restart bot
-
-# Update manually
+# Deploy now instead of waiting for the timer (optional)
 sudo bash scripts/deploy.sh
 
-# Restore the previous healthy release
+# Try again a commit that failed before
+sudo bash scripts/deploy.sh --retry
+
+# Restore the previous release (run it again to undo)
 sudo bash scripts/rollback.sh
-```
-
-If you changed `APP_NAME`, use the slug printed by `install.sh`:
-
-```bash
-APP_SLUG=my-qr-bot docker compose ps
-sudo systemctl status my-qr-bot-deploy.timer
 ```
 
 See the [VPS acceptance checklist](docs/VPS_ACCEPTANCE.md) for a full production
@@ -223,15 +225,17 @@ bot features can evolve without weakening rollback behavior.
 python -m ruff check .
 python -m ruff format --check .
 python -m pytest
-shellcheck install.sh scripts/*.sh tests/shell/*.sh
+shellcheck install.sh scripts/*.sh tests/shell/*.sh tests/e2e/*.sh
 bash tests/shell/test-deploy.sh
 ENV_FILE=.env-example APP_SLUG=qr-code-generator-tgbot \
   docker compose config --quiet
+bash tests/e2e/in-docker.sh   # about ten minutes, needs Docker
 ```
 
 CI runs Python tests on 3.11, 3.12, and 3.13, validates shell deployment and
-rollback scenarios, builds the production image, and checks its non-root,
-read-only configuration.
+rollback scenarios, builds the production image, checks its non-root,
+read-only configuration, and runs the real installer and deployment scripts
+against real Docker with a fake Telegram API.
 
 ## Contributing
 
